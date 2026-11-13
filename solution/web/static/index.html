@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Universe – Interaction Ledger & Data Ingestion Platform</title>
+  <!-- Tailwind CSS -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Clean Light Theme Styling */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .nav-item.active { background-color: #f1f5f9; color: #0f172a; font-weight: 600; border-right: 3px solid #0284c7; }
+    .dropzone.dragover { border-color: #0284c7; background-color: #f0f9ff; }
+  </style>
+</head>
+<body class="h-full flex flex-col md:flex-row overflow-hidden text-slate-800">
+
+  <!-- Mobile Header Bar -->
+  <div class="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold text-sm">AU</div>
+      <span class="font-bold text-slate-900 tracking-tight text-sm">Interaction Ledger</span>
+    </div>
+    <button onclick="toggleMobileNav()" class="p-2 text-slate-600 hover:text-slate-900">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 shrink-0 select-none z-20">
+    <!-- Brand -->
+    <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-sm">
+        AU
+      </div>
+      <div>
+        <div class="font-bold text-slate-900 leading-tight">Agentic Universe</div>
+        <div class="text-[11px] font-medium text-slate-400">Interaction Ledger & Reports</div>
+      </div>
+    </div>
+
+    <!-- System Status Indicator -->
+    <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="status-text" class="text-slate-600 font-medium">Pipeline Ready</span>
+      </div>
+      <span class="text-[11px] text-slate-400 font-mono">SQLite (WAL)</span>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+      <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span>Dashboard Overview</span>
+      </button>
+
+      <button onclick="navigate('upload')" id="nav-upload" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <span>Upload Center</span>
+      </button>
+
+      <button onclick="navigate('leads')" id="nav-leads" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        <span>Lead Management</span>
+      </button>
+
+      <button onclick="navigate('ledger')" id="nav-ledger" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+        <span>Interaction Ledger</span>
+      </button>
+
+      <button onclick="navigate('reports')" id="nav-reports" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <span>Official Reports</span>
+      </button>
+
+      <button onclick="navigate('quality')" id="nav-quality" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition text-left">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        <span>Data Quality Audit</span>
+      </button>
+    </nav>
+
+    <!-- Footer Info -->
+    <div class="p-4 border-t border-slate-100 text-[11px] text-slate-400">
+      <div class="font-medium text-slate-600">Assignment A Platform</div>
+      <div>AES-256-GCM • HMAC Blind Index</div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+    <!-- Top Action Bar -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
+      <div>
+        <h1 id="page-title" class="text-xl font-bold text-slate-900 leading-none">Dashboard Overview</h1>
+        <p id="page-subtitle" class="text-xs text-slate-500 mt-1">Live interaction metrics, call bucketing, and report status</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="refreshAllData()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Refresh
+        </button>
+        <button onclick="navigate('upload')" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 rounded-lg hover:bg-sky-700 shadow-sm transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Upload Data
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content View Container -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 1: DASHBOARD OVERVIEW -->
+      <!-- ====================================================================== -->
+      <section id="view-dashboard" class="space-y-6">
+        <!-- Metric Cards Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Total Leads</div>
+            <div id="metric-total-leads" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            <div id="metric-sub-leads" class="text-[11px] text-slate-400 mt-0.5">0 accepted / 0 rejected</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Total Calls</div>
+            <div id="metric-total-calls" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            <div class="text-[11px] text-sky-600 font-medium mt-0.5">Verified initiated</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Connected Calls</div>
+            <div id="metric-connected-calls" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            <div id="metric-connectivity-rate" class="text-[11px] text-emerald-600 font-medium mt-0.5">Rate: 0.00%</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Successful Leads</div>
+            <div id="metric-success-leads" class="text-2xl font-bold text-emerald-600 mt-1">0</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Ever successful</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Total Stream Events</div>
+            <div id="metric-total-events" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            <div id="metric-duplicate-events" class="text-[11px] text-purple-600 mt-0.5">0 duplicates dropped</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="text-xs font-medium text-slate-500">Active Orphans</div>
+            <div id="metric-orphan-events" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            <div class="text-[11px] text-amber-600 mt-0.5">Awaiting lead arrival</div>
+          </div>
+        </div>
+
+        <!-- 2 Column Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Call Bucket Distribution -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Leads by Call Bucket</h2>
+              <span class="text-xs text-slate-400">Specification Precedence</span>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completed (Terminal Disposition)
+                  </span>
+                  <span id="bucket-count-completed" class="font-bold text-slate-900">0</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                  <div id="bucket-bar-completed" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> In Progress Dialed
+                  </span>
+                  <span id="bucket-count-dialed" class="font-bold text-slate-900">0</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                  <div id="bucket-bar-dialed" class="bg-sky-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Telephony Failed (All Calls)
+                  </span>
+                  <span id="bucket-count-telephony" class="font-bold text-slate-900">0</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                  <div id="bucket-bar-telephony" class="bg-rose-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Yet to Reach Out (Zero Calls)
+                  </span>
+                  <span id="bucket-count-yet" class="font-bold text-slate-900">0</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                  <div id="bucket-bar-yet" class="bg-slate-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Activity Table Preview -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Daily Overview (IST)</h2>
+              <span class="text-xs text-slate-400">4-decimal rates</span>
+            </div>
+            <div class="flex-1 overflow-x-auto max-h-56">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold sticky top-0">
+                  <tr>
+                    <th class="p-2">Date</th>
+                    <th class="p-2 text-right">Calls</th>
+                    <th class="p-2 text-right">Connected</th>
+                    <th class="p-2 text-right">Rate</th>
+                    <th class="p-2 text-right text-emerald-600">Success</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-table-body" class="divide-y divide-slate-100">
+                  <tr><td colspan="5" class="p-4 text-center text-slate-400">No daily call data available.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 2: UPLOAD CENTER -->
+      <!-- ====================================================================== -->
+      <section id="view-upload" class="hidden space-y-6">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div class="max-w-3xl">
+            <h2 class="text-base font-bold text-slate-900">Upload & Ingest Pipeline Data</h2>
+            <p class="text-xs text-slate-500 mt-1">Upload messy CSV lead drops and JSONL call streams. Ingestion applies schema-order validation, AES-256-GCM encryption, orphan reconciliation, and report generation automatically.</p>
+          </div>
+
+          <div class="mt-6 space-y-6">
+            <!-- Workflow Selector -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Target Workflow</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
+                <label class="flex items-center gap-3 p-3.5 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 transition has-[:checked]:border-sky-600 has-[:checked]:bg-sky-50/50">
+                  <input type="radio" name="workflow_choice" value="motor_renewal" checked class="text-sky-600 focus:ring-sky-500">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900">Motor Renewal</div>
+                    <div class="text-xs text-slate-500">Policy renewals, premium decimal, vehicles</div>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 p-3.5 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50 transition has-[:checked]:border-sky-600 has-[:checked]:bg-sky-50/50">
+                  <input type="radio" name="workflow_choice" value="policy_feedback" class="text-sky-600 focus:ring-sky-500">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900">Policy Feedback</div>
+                    <div class="text-xs text-slate-500">Post-purchase feedback, orders, products</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Upload Zones Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Lead CSV Dropzone -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">1. Customer Leads (.csv) *</label>
+                <div id="dropzone-leads" class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-sky-500 transition cursor-pointer bg-slate-50/50" onclick="document.getElementById('input-leads').click()">
+                  <input type="file" id="input-leads" accept=".csv" class="hidden" onchange="handleFileSelected('leads')">
+                  <svg class="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <p class="text-xs font-semibold text-slate-700">Click to browse or drag & drop</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Supports CSV files up to 50 MB</p>
+                  <div id="preview-leads" class="hidden mt-3 p-2 bg-white rounded border border-slate-200 text-xs text-slate-700 font-mono text-left flex items-center justify-between">
+                    <span id="preview-name-leads" class="truncate max-w-[200px]">filename.csv</span>
+                    <button type="button" onclick="event.stopPropagation(); clearFile('leads')" class="text-rose-500 hover:text-rose-700 font-bold ml-2">×</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Events JSONL Dropzone -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">2. Call Events (.jsonl / .json) (Optional)</label>
+                <div id="dropzone-events" class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-sky-500 transition cursor-pointer bg-slate-50/50" onclick="document.getElementById('input-events').click()">
+                  <input type="file" id="input-events" accept=".jsonl,.json" class="hidden" onchange="handleFileSelected('events')">
+                  <svg class="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                  <p class="text-xs font-semibold text-slate-700">Click to browse or drag & drop</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Supports JSON Lines stream up to 50 MB</p>
+                  <div id="preview-events" class="hidden mt-3 p-2 bg-white rounded border border-slate-200 text-xs text-slate-700 font-mono text-left flex items-center justify-between">
+                    <span id="preview-name-events" class="truncate max-w-[200px]">events.jsonl</span>
+                    <button type="button" onclick="event.stopPropagation(); clearFile('events')" class="text-rose-500 hover:text-rose-700 font-bold ml-2">×</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Action -->
+            <div class="flex items-center gap-4 pt-2">
+              <button id="btn-submit-upload" onclick="executeUpload()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-lg shadow-sm transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="spinner-upload" class="hidden w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span id="upload-submit-text">Upload and Process Data</span>
+              </button>
+              <button onclick="resetUploadForm()" class="px-4 py-2.5 text-xs text-slate-500 hover:text-slate-800 transition">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingestion Results Display Card -->
+        <div id="upload-result-card" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">✓</div>
+              <h3 class="text-sm font-bold text-slate-900">Ingestion Results Summary</h3>
+            </div>
+            <span class="text-xs text-slate-400 font-mono" id="result-timestamp">Processed just now</span>
+          </div>
+
+          <div id="result-metrics-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <!-- Rejections & Warnings Breakdown if any -->
+          <div id="result-rejections-container" class="hidden pt-3 border-t border-slate-100">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Rejections Captured (Zero PII)</h4>
+            <div id="result-rejections-list" class="space-y-1.5 max-h-48 overflow-y-auto font-mono text-xs text-slate-600">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 3: LEAD MANAGEMENT -->
+      <!-- ====================================================================== -->
+      <section id="view-leads" class="hidden space-y-4">
+        <!-- Search & Filter Controls -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center">
+          <div class="w-full md:w-80 relative">
+            <input type="text" id="leads-search-input" oninput="onSearchLeads()" placeholder="Search external ref or phone..." class="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <select id="leads-workflow-filter" onchange="fetchLeadsTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">All Workflows</option>
+              <option value="motor_renewal">Motor Renewal</option>
+              <option value="policy_feedback">Policy Feedback</option>
+            </select>
+
+            <select id="leads-bucket-filter" onchange="fetchLeadsTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">All Call Buckets</option>
+              <option value="completed">Completed</option>
+              <option value="in_progress_dialed">In Progress Dialed</option>
+              <option value="in_progress_telephony_failed">Telephony Failed</option>
+              <option value="yet_to_reach_out">Yet to Reach Out</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto flex-1 max-h-[550px]">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 uppercase font-semibold sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Workflow</th>
+                  <th class="p-3">External Ref</th>
+                  <th class="p-3">Batch ID</th>
+                  <th class="p-3">Masked Phone</th>
+                  <th class="p-3">Call Bucket</th>
+                  <th class="p-3 text-right">Calls</th>
+                  <th class="p-3 text-right">Conn</th>
+                  <th class="p-3">Effective Disp</th>
+                  <th class="p-3 text-center">Success</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="9" class="p-6 text-center text-slate-400">Loading leads data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="p-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs">
+            <span id="leads-pagination-info" class="text-slate-500">Showing page 1</span>
+            <div class="flex items-center gap-1.5">
+              <button id="leads-prev-btn" onclick="changeLeadsPage(-1)" class="px-2.5 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40">Previous</button>
+              <span id="leads-page-indicator" class="px-2 font-mono">1</span>
+              <button id="leads-next-btn" onclick="changeLeadsPage(1)" class="px-2.5 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 4: INTERACTION LEDGER -->
+      <!-- ====================================================================== -->
+      <section id="view-ledger" class="hidden space-y-4">
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row gap-3 justify-between items-center">
+          <div class="text-xs text-slate-500">
+            Append-only immutable event stream. Primary key uniqueness strictly enforced.
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="ledger-type-filter" onchange="fetchLedgerTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700">
+              <option value="">All Event Types</option>
+              <option value="call.initiated">call.initiated</option>
+              <option value="call.connected">call.connected</option>
+              <option value="disposition.set">disposition.set</option>
+              <option value="disposition.override">disposition.override</option>
+              <option value="call.telephony_failed">call.telephony_failed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto max-h-[550px]">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 uppercase font-semibold sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Event ID</th>
+                  <th class="p-3">Workflow</th>
+                  <th class="p-3">Event Type</th>
+                  <th class="p-3">Call ID</th>
+                  <th class="p-3">Occurred At (IST)</th>
+                  <th class="p-3">Masked Phone</th>
+                  <th class="p-3">Disposition</th>
+                  <th class="p-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="p-6 text-center text-slate-400">Loading ledger stream...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="p-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs">
+            <span id="ledger-pagination-info" class="text-slate-500">Showing page 1</span>
+            <div class="flex items-center gap-1.5">
+              <button id="ledger-prev-btn" onclick="changeLedgerPage(-1)" class="px-2.5 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40">Previous</button>
+              <span id="ledger-page-indicator" class="px-2 font-mono">1</span>
+              <button id="ledger-next-btn" onclick="changeLedgerPage(1)" class="px-2.5 py-1 bg-white border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 5: OFFICIAL REPORTS & DOWNLOADS -->
+      <!-- ====================================================================== -->
+      <section id="view-reports" class="hidden space-y-6">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h2 class="text-base font-bold text-slate-900">Official Pipeline Reports</h2>
+          <p class="text-xs text-slate-500 mt-1">Generated directly from the append-only ledger and validated leads. Formatted character-for-character to the assignment contract.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            <!-- 1. batch_summary.csv -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-sky-700">batch_summary.csv</span>
+                  <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">CSV</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Aggregated lead counts across all 6 batches and 4 call buckets.</p>
+                <div class="text-[11px] text-slate-400 mt-2" id="info-batch_summary">Checking status...</div>
+              </div>
+              <a href="/api/reports/download/batch_summary.csv" download class="mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download File
+              </a>
+            </div>
+
+            <!-- 2. daily_overview.csv -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-sky-700">daily_overview.csv</span>
+                  <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">CSV</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Daily call volume, connected calls, 4-decimal connectivity rate, and success leads.</p>
+                <div class="text-[11px] text-slate-400 mt-2" id="info-daily_overview">Checking status...</div>
+              </div>
+              <a href="/api/reports/download/daily_overview.csv" download class="mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download File
+              </a>
+            </div>
+
+            <!-- 3. lead_report.csv -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-sky-700">lead_report.csv</span>
+                  <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">CSV</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">One row per lead, masked phones (+91******XXXX), call buckets, and latest disposition.</p>
+                <div class="text-[11px] text-slate-400 mt-2" id="info-lead_report">Checking status...</div>
+              </div>
+              <a href="/api/reports/download/lead_report.csv" download class="mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download File
+              </a>
+            </div>
+
+            <!-- 4. rejections.csv -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-sky-700">rejections.csv</span>
+                  <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">CSV</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Rejected lead rows strictly containing workflow, batch, row number, and schema reason.</p>
+                <div class="text-[11px] text-slate-400 mt-2" id="info-rejections">Checking status...</div>
+              </div>
+              <a href="/api/reports/download/rejections.csv" download class="mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download File
+              </a>
+            </div>
+
+            <!-- 5. data_quality.json -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-sky-700">data_quality.json</span>
+                  <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-mono">JSON</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Comprehensive data quality audit with exact 10 specification keys.</p>
+                <div class="text-[11px] text-slate-400 mt-2" id="info-data_quality">Checking status...</div>
+              </div>
+              <a href="/api/reports/download/data_quality.json" download class="mt-4 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download File
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================== -->
+      <!-- VIEW 6: DATA QUALITY AUDIT -->
+      <!-- ====================================================================== -->
+      <section id="view-quality" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Rejection Breakdown by Reason</h2>
+            <div id="quality-reasons-list" class="space-y-3 text-xs">
+              <p class="text-slate-400">Loading rejection distribution...</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Stream Telemetry & Event Integrity</h2>
+            <dl class="divide-y divide-slate-100 text-xs">
+              <div class="py-2.5 flex justify-between"><dt class="text-slate-500">Duplicate Events Dropped</dt><dd id="dq-dup-events" class="font-mono font-semibold text-purple-700">0</dd></div>
+              <div class="py-2.5 flex justify-between"><dt class="text-slate-500">Malformed Event Lines</dt><dd id="dq-malformed" class="font-mono font-semibold text-amber-600">0</dd></div>
+              <div class="py-2.5 flex justify-between"><dt class="text-slate-500">Unknown Disposition Codes</dt><dd id="dq-unknown-disp" class="font-mono font-semibold text-slate-700">0</dd></div>
+              <div class="py-2.5 flex justify-between"><dt class="text-slate-500">Active Orphan Events</dt><dd id="dq-active-orphans" class="font-mono font-semibold text-sky-700">0</dd></div>
+              <div class="py-2.5 flex justify-between"><dt class="text-slate-500">Non-Critical Field Warnings</dt><dd id="dq-field-warnings" class="font-mono font-semibold text-slate-700">0</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-xs">
+    <span id="toast-icon">ℹ️</span>
+    <span id="toast-message" class="flex-1">Notification message</span>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // State
+    let currentView = 'dashboard';
+    let selectedFiles = { leads: null, events: null };
+    let leadsState = { page: 1, limit: 20, total: 0 };
+    let ledgerState = { page: 1, limit: 20, total: 0 };
+
+    // Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDropzones();
+      const hash = window.location.hash.replace('#', '');
+      if (['dashboard', 'upload', 'leads', 'ledger', 'reports', 'quality'].includes(hash)) {
+        navigate(hash);
+      } else {
+        refreshAllData();
+      }
+    });
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['dashboard', 'upload', 'leads', 'ledger', 'reports', 'quality'].includes(hash) && hash !== currentView) {
+        navigate(hash);
+      }
+    });
+
+    function navigate(viewName) {
+      currentView = viewName;
+      if (window.location.hash !== `#${viewName}`) {
+        history.replaceState(null, '', `#${viewName}`);
+      }
+      // Update sidebar active classes
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const activeNav = document.getElementById(`nav-${viewName}`);
+      if (activeNav) activeNav.classList.add('active');
+
+      // Auto-close mobile sidebar on small screens
+      const sidebar = document.getElementById('sidebar');
+      if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden')) {
+        sidebar.classList.add('hidden');
+      }
+
+      // Update Views
+      const views = ['dashboard', 'upload', 'leads', 'ledger', 'reports', 'quality'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.toggle('hidden', v !== viewName);
+      });
+
+      // Update titles
+      const titles = {
+        dashboard: ['Dashboard Overview', 'Live interaction metrics, call bucketing, and report status'],
+        upload: ['Upload Center', 'Ingest messy lead CSVs and interaction JSONL streams'],
+        leads: ['Lead Management', 'Searchable leads repository with phone masking and call buckets'],
+        ledger: ['Interaction Ledger', 'Append-only immutable event stream with disposition override tracking'],
+        reports: ['Official Reports', 'Download the five official reports matching exact assignment contracts'],
+        quality: ['Data Quality Audit', 'Rejection analysis, orphan counts, and stream telemetry']
+      };
+      if (titles[viewName]) {
+        document.getElementById('page-title').innerText = titles[viewName][0];
+        document.getElementById('page-subtitle').innerText = titles[viewName][1];
+      }
+
+      // Lazy load view data
+      if (viewName === 'leads') fetchLeadsTable();
+      if (viewName === 'ledger') fetchLedgerTable();
+      if (viewName === 'reports') fetchReportsStatus();
+    }
+
+    function toggleMobileNav() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('hidden');
+    }
+
+    // Refresh all data
+    async function refreshAllData() {
+      await fetchDashboardStats();
+      if (currentView === 'leads') fetchLeadsTable();
+      if (currentView === 'ledger') fetchLedgerTable();
+      if (currentView === 'reports') fetchReportsStatus();
+    }
+
+    // API: Fetch Dashboard Stats
+    async function fetchDashboardStats() {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        const data = await res.json();
+        if (data.status !== 'success') return;
+
+        const s = data.summary;
+        document.getElementById('metric-total-leads').innerText = s.total_leads.toLocaleString();
+        document.getElementById('metric-sub-leads').innerText = `${s.accepted_leads.toLocaleString()} accepted / ${s.rejected_leads.toLocaleString()} rejected`;
+        document.getElementById('metric-total-calls').innerText = s.total_calls.toLocaleString();
+        document.getElementById('metric-connected-calls').innerText = s.connected_calls.toLocaleString();
+        const ratePct = (parseFloat(s.connectivity_rate) * 100).toFixed(1);
+        document.getElementById('metric-connectivity-rate').innerText = `Rate: ${ratePct}%`;
+        document.getElementById('metric-success-leads').innerText = s.successful_leads.toLocaleString();
+        document.getElementById('metric-total-events').innerText = s.events_total.toLocaleString();
+        document.getElementById('metric-duplicate-events').innerText = `${s.duplicate_events_dropped.toLocaleString()} duplicates dropped`;
+        document.getElementById('metric-orphan-events').innerText = s.active_orphan_events.toLocaleString();
+
+        // Update Buckets
+        const b = data.bucket_distribution;
+        const totalB = Math.max(1, s.accepted_leads);
+        const updateBucket = (name, val) => {
+          document.getElementById(`bucket-count-${name}`).innerText = val.toLocaleString();
+          const pct = Math.min(100, (val / totalB) * 100).toFixed(1);
+          document.getElementById(`bucket-bar-${name}`).style.width = `${pct}%`;
+        };
+        updateBucket('completed', b.completed || 0);
+        updateBucket('dialed', b.in_progress_dialed || 0);
+        updateBucket('telephony', b.in_progress_telephony_failed || 0);
+        updateBucket('yet', b.yet_to_reach_out || 0);
+
+        // Update Daily Activity Table
+        const dailyTbody = document.getElementById('daily-table-body');
+        if (data.daily_activity && data.daily_activity.length > 0) {
+          dailyTbody.innerHTML = data.daily_activity.map(d => `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="p-2 font-mono text-slate-800">${d.date}</td>
+              <td class="p-2 text-right">${d.total_calls}</td>
+              <td class="p-2 text-right">${d.connected_calls}</td>
+              <td class="p-2 text-right font-mono text-[11px]">${d.connectivity_rate}</td>
+              <td class="p-2 text-right font-semibold text-emerald-600">${d.success_leads}</td>
+            </tr>
+          `).join('');
+        }
+
+        // Update Data Quality Tab
+        const qContainer = document.getElementById('quality-reasons-list');
+        const rejs = data.rejections_by_reason;
+        const totalRejs = Math.max(1, s.rejected_leads);
+        if (Object.keys(rejs).length > 0) {
+          qContainer.innerHTML = Object.entries(rejs).map(([reason, count]) => {
+            const pct = ((count / totalRejs) * 100).toFixed(1);
+            return `
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="font-mono text-slate-700">${reason}</span>
+                  <span class="text-slate-500 font-semibold">${count} (${pct}%)</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="bg-rose-500 h-2 rounded-full" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          qContainer.innerHTML = '<p class="text-slate-400">No lead rejections recorded.</p>';
+        }
+
+        document.getElementById('dq-dup-events').innerText = s.duplicate_events_dropped.toLocaleString();
+        document.getElementById('dq-malformed').innerText = s.malformed_events.toLocaleString();
+        document.getElementById('dq-unknown-disp').innerText = s.unknown_disposition_events.toLocaleString();
+        document.getElementById('dq-active-orphans').innerText = s.active_orphan_events.toLocaleString();
+        document.getElementById('dq-field-warnings').innerText = s.field_warnings.toLocaleString();
+
+      } catch (err) {
+        console.error('Failed to load dashboard stats:', err);
+      }
+    }
+
+    // API: Fetch Leads Table
+    async function fetchLeadsTable() {
+      const q = document.getElementById('leads-search-input').value;
+      const wf = document.getElementById('leads-workflow-filter').value;
+      const bucket = document.getElementById('leads-bucket-filter').value;
+      const p = leadsState.page;
+      const lim = leadsState.limit;
+
+      const tbody = document.getElementById('leads-table-body');
+      tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Loading leads...</td></tr>';
+
+      try {
+        const url = `/api/dashboard/leads?q=${encodeURIComponent(q)}&workflow_id=${encodeURIComponent(wf)}&bucket=${encodeURIComponent(bucket)}&page=${p}&limit=${lim}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        leadsState.total = data.total;
+
+        document.getElementById('leads-pagination-info').innerText = `Showing ${data.leads.length} of ${data.total} matching leads`;
+        document.getElementById('leads-page-indicator').innerText = `${data.page} / ${data.total_pages}`;
+        document.getElementById('leads-prev-btn').disabled = data.page <= 1;
+        document.getElementById('leads-next-btn').disabled = data.page >= data.total_pages;
+
+        if (data.leads.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">No matching leads found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.leads.map(lead => {
+          let bClass = 'bg-slate-100 text-slate-700';
+          if (lead.bucket === 'completed') bClass = 'bg-emerald-50 text-emerald-700 font-medium';
+          else if (lead.bucket === 'in_progress_dialed') bClass = 'bg-sky-50 text-sky-700 font-medium';
+          else if (lead.bucket === 'in_progress_telephony_failed') bClass = 'bg-rose-50 text-rose-700 font-medium';
+
+          const succIcon = lead.ever_success ? '<span class="text-emerald-600 font-bold">✓</span>' : '<span class="text-slate-300">—</span>';
+
+          return `
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="p-3 font-mono text-sky-700 text-[11px]">${lead.workflow_id}</td>
+              <td class="p-3 font-mono font-medium text-slate-900">${lead.external_ref}</td>
+              <td class="p-3 font-mono text-slate-500">${lead.batch_id}</td>
+              <td class="p-3 font-mono text-slate-700">${lead.phone_masked}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] ${bClass}">${lead.bucket}</span></td>
+              <td class="p-3 text-right font-medium">${lead.total_calls}</td>
+              <td class="p-3 text-right">${lead.connected_calls}</td>
+              <td class="p-3 font-mono text-slate-600">${lead.current_disposition || '—'}</td>
+              <td class="p-3 text-center">${succIcon}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error fetching leads:', err);
+      }
+    }
+
+    function changeLeadsPage(delta) {
+      leadsState.page = Math.max(1, leadsState.page + delta);
+      fetchLeadsTable();
+    }
+
+    // API: Fetch Ledger Events
+    async function fetchLedgerTable() {
+      const typeFilter = document.getElementById('ledger-type-filter').value;
+      const p = ledgerState.page;
+      const lim = ledgerState.limit;
+
+      const tbody = document.getElementById('ledger-table-body');
+      tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-400">Loading events...</td></tr>';
+
+      try {
+        const url = `/api/dashboard/ledger?event_type=${encodeURIComponent(typeFilter)}&page=${p}&limit=${lim}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        ledgerState.total = data.total;
+
+        document.getElementById('ledger-pagination-info').innerText = `Showing ${data.events.length} of ${data.total} events`;
+        document.getElementById('ledger-page-indicator').innerText = `${data.page} / ${data.total_pages}`;
+        document.getElementById('ledger-prev-btn').disabled = data.page <= 1;
+        document.getElementById('ledger-next-btn').disabled = data.page >= data.total_pages;
+
+        if (data.events.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-400">No events found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.events.map(ev => {
+          let tColor = 'bg-slate-100 text-slate-700';
+          if (ev.event_type === 'call.initiated') tColor = 'bg-sky-50 text-sky-700 font-medium';
+          else if (ev.event_type === 'call.connected') tColor = 'bg-emerald-50 text-emerald-700 font-medium';
+          else if (ev.event_type.startsWith('disposition.')) tColor = 'bg-indigo-50 text-indigo-700 font-medium';
+          else if (ev.event_type === 'call.telephony_failed') tColor = 'bg-rose-50 text-rose-700 font-medium';
+
+          const orphanBadge = ev.is_orphan ? '<span class="text-amber-600 font-semibold text-[10px] bg-amber-50 px-1.5 py-0.5 rounded">Orphan</span>' : '<span class="text-emerald-600 text-[10px]">Linked</span>';
+
+          return `
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="p-3 font-mono text-slate-900">${ev.event_id}</td>
+              <td class="p-3 font-mono text-slate-500 text-[11px]">${ev.workflow_id}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${tColor}">${ev.event_type}</span></td>
+              <td class="p-3 font-mono text-slate-600">${ev.call_id}</td>
+              <td class="p-3 font-mono text-slate-600 text-[11px]">${ev.occurred_at_ist}</td>
+              <td class="p-3 font-mono text-slate-700">${ev.phone_masked}</td>
+              <td class="p-3 font-mono text-slate-700">${ev.disposition_code}</td>
+              <td class="p-3 text-center">${orphanBadge}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error fetching ledger:', err);
+      }
+    }
+
+    function changeLedgerPage(delta) {
+      ledgerState.page = Math.max(1, ledgerState.page + delta);
+      fetchLedgerTable();
+    }
+
+    // API: Fetch Reports Status
+    async function fetchReportsStatus() {
+      try {
+        const res = await fetch('/api/reports/status');
+        const data = await res.json();
+        data.reports.forEach(r => {
+          const key = r.filename.split('.')[0];
+          const el = document.getElementById(`info-${key}`);
+          if (el) {
+            if (r.exists) {
+              const kb = (r.size_bytes / 1024).toFixed(1);
+              const timeStr = r.modified_at ? new Date(r.modified_at).toLocaleTimeString() : '';
+              el.innerHTML = `<span class="font-medium text-slate-700">${r.row_count} records</span> • ${kb} KB${timeStr ? ` • <span class="text-slate-400">Updated ${timeStr}</span>` : ''}`;
+            } else {
+              el.innerText = 'Not yet generated';
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error fetching reports status:', err);
+      }
+    }
+
+    // Dropzone Setup
+    function setupDropzones() {
+      ['leads', 'events'].forEach(type => {
+        const dropzone = document.getElementById(`dropzone-${type}`);
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('dragover');
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setFile(type, e.dataTransfer.files[0]);
+          }
+        });
+      });
+    }
+
+    function handleFileSelected(type) {
+      const input = document.getElementById(`input-${type}`);
+      if (input.files && input.files[0]) {
+        setFile(type, input.files[0]);
+      }
+    }
+
+    function setFile(type, file) {
+      selectedFiles[type] = file;
+      document.getElementById(`preview-${type}`).classList.remove('hidden');
+      const kb = (file.size / 1024).toFixed(1);
+      document.getElementById(`preview-name-${type}`).innerText = `${file.name} (${kb} KB)`;
+    }
+
+    function clearFile(type) {
+      selectedFiles[type] = null;
+      document.getElementById(`input-${type}`).value = '';
+      document.getElementById(`preview-${type}`).classList.add('hidden');
+    }
+
+    function resetUploadForm() {
+      clearFile('leads');
+      clearFile('events');
+      document.getElementById('upload-result-card').classList.add('hidden');
+    }
+
+    // API: Execute Upload and Processing
+    async function executeUpload() {
+      if (!selectedFiles.leads && !selectedFiles.events) {
+        showToast('Please select at least a leads CSV or events JSONL file.', '⚠️');
+        return;
+      }
+
+      const workflow_id = document.querySelector('input[name="workflow_choice"]:checked').value;
+      const btn = document.getElementById('btn-submit-upload');
+      const spinner = document.getElementById('spinner-upload');
+      const submitText = document.getElementById('upload-submit-text');
+
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      if (submitText) submitText.innerText = 'Processing Ingestion Pipeline...';
+
+      try {
+        let endpoint = '/api/upload/bundle';
+        const formData = new FormData();
+        formData.append('workflow_id', workflow_id);
+
+        if (selectedFiles.leads && selectedFiles.events) {
+          endpoint = '/api/upload/bundle';
+          formData.append('leads_file', selectedFiles.leads);
+          formData.append('events_file', selectedFiles.events);
+        } else if (selectedFiles.leads) {
+          endpoint = '/api/upload/leads';
+          formData.append('file', selectedFiles.leads);
+        } else {
+          endpoint = '/api/upload/events';
+          formData.append('file', selectedFiles.events);
+        }
+
+        const res = await fetch(endpoint, { method: 'POST', body: formData });
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonErr) {
+          data = { message: 'Unexpected server response format' };
+        }
+
+        if (!res.ok) {
+          const errMsg = data.detail || data.message || data.error || `Upload failed (HTTP ${res.status})`;
+          throw new Error(errMsg);
+        }
+
+        showToast('Data uploaded and processed successfully! Reports regenerated.', '✅');
+        displayUploadResults(data, endpoint);
+        refreshAllData();
+
+      } catch (err) {
+        showToast(err.message || 'An error occurred during processing', '❌');
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        if (submitText) submitText.innerText = 'Upload & Process Files';
+      }
+    }
+
+    // Render Upload Results Card
+    function displayUploadResults(data, endpoint) {
+      const card = document.getElementById('upload-result-card');
+      card.classList.remove('hidden');
+      document.getElementById('result-timestamp').innerText = new Date().toLocaleTimeString();
+
+      const container = document.getElementById('result-metrics-container');
+      const rejsContainer = document.getElementById('result-rejections-container');
+      const rejsList = document.getElementById('result-rejections-list');
+      rejsContainer.classList.add('hidden');
+
+      let html = '';
+
+      // Check for bundle vs individual
+      const leadMetrics = data.metrics && data.metrics.lead_rows_total !== undefined ? data.metrics : (data.leads ? data.leads.metrics : null);
+      const eventMetrics = data.metrics && data.metrics.events_total !== undefined ? data.metrics : (data.events ? data.events.metrics : null);
+
+      if (leadMetrics) {
+        html += `
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Lead Rows Total</div>
+            <div class="text-base font-bold text-slate-900 mt-0.5">${leadMetrics.lead_rows_total}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Accepted Leads</div>
+            <div class="text-base font-bold text-emerald-600 mt-0.5">${leadMetrics.lead_rows_accepted}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Rejected Leads</div>
+            <div class="text-base font-bold text-rose-600 mt-0.5">${leadMetrics.lead_rows_rejected}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Duplicates Merged</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${leadMetrics.duplicate_lead_rows_merged || 0}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Field Warnings</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${leadMetrics.field_warnings || 0}</div>
+          </div>
+        `;
+      }
+
+      if (eventMetrics) {
+        html += `
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Events Total</div>
+            <div class="text-base font-bold text-slate-900 mt-0.5">${eventMetrics.events_total}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Processed Events</div>
+            <div class="text-base font-bold text-sky-600 mt-0.5">${eventMetrics.events_processed}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Malformed Lines</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.malformed_events || 0}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Duplicate Events Dropped</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.duplicate_events_dropped || 0}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Unknown Dispositions</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.unknown_disposition_events || 0}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Active Orphans</div>
+            <div class="text-base font-bold text-purple-600 mt-0.5">${eventMetrics.active_orphan_events || 0}</div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+      // Handle Rejection Reasons
+      const rejs = data.rejection_details || (data.leads && data.leads.rejection_details);
+      if (rejs && rejs.length > 0) {
+        rejsContainer.classList.remove('hidden');
+        rejsList.innerHTML = rejs.map(r => `
+          <div class="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+            <span class="text-slate-500">Row #${r.row_number}</span>
+            <span class="text-rose-600 font-semibold">${r.reason}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Toast Utility
+    function showToast(msg, icon = 'ℹ️') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      document.getElementById('toast-icon').innerText = icon;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 4000);
+    }
+
+    // Debounce Utility
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    const onSearchLeads = debounce(() => {
+      leadsState.page = 1;
+      fetchLeadsTable();
+    }, 250);
+  </script>
+</body>
+</html>

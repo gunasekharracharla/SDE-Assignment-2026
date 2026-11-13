@@ -29,3 +29,21 @@ skill. Honest answers are never held against you. Discovering undisclosed use is
 - **Automated Test Suite:** Built and ran 51 automated unit and integration tests with `pytest`, achieving 100% pass rate.
 - **Multi-Seed Verification:** Executed the official synthetic data generator across three distinct seeds (**42**, **100**, and **2026**) with fresh databases, validating all invariants (lead bucket sums, daily call counts, connectivity rates, PII masking, orphan event counts).
 - **Idempotency Stress Testing:** Ingested the same drops repeatedly, asserting that database row counts remained unchanged and generated reports were byte-for-byte identical.
+
+---
+
+## Web Application Upgrade (`feature/web-upload-dashboard`)
+
+During the upgrade of the application into a web platform:
+- **Tools Used:** Antigravity IDE Agent.
+- **What I used them for:**
+  - Scaffolding the FastAPI backend application structure (`solution/web/app.py`, `solution/web/routes/upload.py`, `solution/web/routes/dashboard.py`, `solution/web/routes/reports.py`).
+  - Drafting responsive Tailwind CSS and modern SaaS SPA frontend components (`solution/web/static/index.html`).
+  - Authoring Playwright browser automation scripts (`tests/test_performance_and_responsive.py`, `tests/verify_browser.py`) for multi-viewport responsive testing and automated file download verification.
+  - Designing security penetration test fixtures for SQL injection, path traversal, and streaming chunked size enforcement (`tests/test_web_security_qa.py`).
+- **Where the AI was caught or adjusted:**
+  - *Empty (0-byte) File Uploads:* Initially, 0-byte files returned HTTP 200 with 0 processed leads instead of failing validation. I caught this during QA, added explicit `file_size == 0` validation checks in `upload.py`, returning HTTP 400 Bad Request.
+  - *Missing CSV Column Headers:* CSVs with arbitrary column headers were being parsed row-by-row rather than failing upfront. I implemented `_validate_lead_csv_headers()` in `upload.py` to cross-reference header aliases against workflow schemas and reject invalid files immediately.
+  - *Debounce Event Binding:* An initial implementation recreated debounce timers on each keystroke in `onkeyup`. I refactored the search input to use a shared debounced handler on `oninput="onSearchLeads()"`, properly resetting pagination to page 1.
+  - *Mobile Drawer UX:* Auto-closed the off-canvas navigation sidebar when links were clicked on small viewports (< 768px).
+- **Verification:** Ran all 101 automated tests (51 original CLI + 50 web platform tests), empirical performance benchmarking, and multi-viewport browser testing in Google Chrome.

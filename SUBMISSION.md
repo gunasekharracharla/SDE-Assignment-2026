@@ -181,3 +181,22 @@ tests/test_schemas.py (3 tests) PASSED                                   [100%]
 1. **Chunked Streaming for `--scale large`:** Implement chunked batch insertion and streaming generators for 140,000+ leads and 600,000+ events to optimize memory utilization.
 2. **PostgreSQL Migration:** Port SQLite queries to PostgreSQL using the included `docker-compose.yml`, leveraging partitioned tables on `interaction_ledger` by month.
 3. **Automated DLQ (Dead Letter Queue):** Build an exportable quarantine queue for malformed JSON lines and unlinked orphan calls with supervisor retry capabilities.
+
+---
+
+## Web Application Upgrade (`feature/web-upload-dashboard`)
+
+In addition to the original CLI pipeline, a full-stack, local-first web application has been developed on branch `feature/web-upload-dashboard`:
+
+- **Interactive SaaS Dashboard:** Clean, responsive SPA interface (Desktop, Tablet, Mobile) displaying live aggregated metrics from SQLite without mock data.
+- **Upload Center:** Drag-and-drop support for CSV leads and JSON Lines event streams with multi-workflow selection and chunked streaming size limits (< 50 MB).
+- **Zero-PII Lead Management:** Searchable, paginated repository with masked phones (`+91******XXXX`) and encrypted customer names.
+- **Append-Only Interaction Ledger Stream:** Chronological event audit log with status badges and disposition override resolution.
+- **Direct Browser Report Downloads:** One-click download of all 5 official contract reports in RFC 4180 CSV (Excel compatible) and valid JSON.
+- **Quality Assurance & Verification:** Comprehensive QA report in `solution/WEB_QA_REPORT.md` and complete portfolio demo guide in `solution/WEB_DEMO_GUIDE.md`. All **101 tests passing** (51 original + 50 web platform tests).
+
+### Launching the Web Application
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn solution.web.app:app --host 127.0.0.1 --port 8000
+```
+Open **`http://127.0.0.1:8000`** in any web browser.
