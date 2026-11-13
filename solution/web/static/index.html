@@ -118,9 +118,9 @@
         <!-- Metric Cards Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <div class="text-xs font-medium text-slate-500">Total Leads</div>
+            <div class="text-xs font-medium text-slate-500">Unique Leads</div>
             <div id="metric-total-leads" class="text-2xl font-bold text-slate-900 mt-1">0</div>
-            <div id="metric-sub-leads" class="text-[11px] text-slate-400 mt-0.5">0 accepted / 0 rejected</div>
+            <div id="metric-sub-leads" class="text-[11px] text-slate-400 mt-0.5">0 rows in • 0 rejected</div>
           </div>
           <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <div class="text-xs font-medium text-slate-500">Total Calls</div>
@@ -314,8 +314,8 @@
         <div id="upload-result-card" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">✓</div>
-              <h3 class="text-sm font-bold text-slate-900">Ingestion Results Summary</h3>
+              <div id="result-icon-badge" class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">✓</div>
+              <h3 id="result-card-title" class="text-sm font-bold text-slate-900">Ingestion Results Summary</h3>
             </div>
             <span class="text-xs text-slate-400 font-mono" id="result-timestamp">Processed just now</span>
           </div>
@@ -376,10 +376,11 @@
                   <th class="p-3 text-right">Conn</th>
                   <th class="p-3">Effective Disp</th>
                   <th class="p-3 text-center">Success</th>
+                  <th class="p-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody id="leads-table-body" class="divide-y divide-slate-100">
-                <tr><td colspan="9" class="p-6 text-center text-slate-400">Loading leads data...</td></tr>
+                <tr><td colspan="10" class="p-6 text-center text-slate-400">Loading leads data...</td></tr>
               </tbody>
             </table>
           </div>
@@ -543,6 +544,36 @@
       <!-- VIEW 6: DATA QUALITY AUDIT -->
       <!-- ====================================================================== -->
       <section id="view-quality" class="hidden space-y-6">
+        <!-- Lead Ingestion Reconciliation Card -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Lead Ingestion & Deduplication Reconciliation</h2>
+            <span class="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">Balanced Formula: Total Rows = Unique Leads + Duplicates Merged + Rejected</span>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+            <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+              <div class="text-slate-500 font-medium">Total Input Rows Processed</div>
+              <div id="dq-total-input-rows" class="text-xl font-bold text-slate-900 mt-1">0</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Raw non-blank CSV rows</div>
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+              <div class="text-slate-500 font-medium">Unique Accepted Leads</div>
+              <div id="dq-unique-leads" class="text-xl font-bold text-emerald-600 mt-1">0</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Deduplicated in SQLite</div>
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+              <div class="text-slate-500 font-medium">Duplicate Rows Merged</div>
+              <div id="dq-duplicate-merged" class="text-xl font-bold text-amber-600 mt-1">0</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Updated later non-null values</div>
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+              <div class="text-slate-500 font-medium">Rejected Lead Rows</div>
+              <div id="dq-rejected-rows" class="text-xl font-bold text-rose-600 mt-1">0</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Logged in rejections.csv</div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Rejection Breakdown by Reason</h2>
@@ -567,6 +598,82 @@
     </div>
   </main>
 
+  <!-- Modal: Manual Disposition Override -->
+  <div id="override-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-200">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Override Call Disposition</h3>
+          <p id="modal-lead-info" class="text-xs text-slate-500 mt-0.5">Loading lead details...</p>
+        </div>
+        <button type="button" onclick="closeOverrideModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg p-1">×</button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs">
+        <!-- Error alert -->
+        <div id="modal-error-alert" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs"></div>
+
+        <!-- No calls notice -->
+        <div id="modal-no-calls-notice" class="hidden text-center py-6">
+          <div class="text-2xl mb-2">📞</div>
+          <p class="font-semibold text-slate-800">No calls initiated for this lead</p>
+          <p class="text-slate-500 text-xs mt-1">Manual overrides can only be applied to existing initiated calls in the interaction ledger.</p>
+        </div>
+
+        <!-- Form fields container -->
+        <div id="modal-form-fields" class="space-y-4">
+          <!-- Call selector -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">Select Call to Override *</label>
+            <select id="modal-call-select" onchange="onModalCallChange()" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-sky-500">
+            </select>
+            <div id="modal-call-details" class="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
+            </div>
+          </div>
+
+          <!-- New Disposition Code -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">New Corrected Disposition *</label>
+            <select id="modal-disp-select" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-sky-500">
+            </select>
+          </div>
+
+          <!-- Audit Reason -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block font-semibold text-slate-700">Audit Reason / Justification</label>
+              <span id="modal-reason-counter" class="text-[10px] text-slate-400">0 / 500</span>
+            </div>
+            <textarea id="modal-reason-input" maxlength="500" oninput="document.getElementById('modal-reason-counter').innerText = `${this.value.length} / 500`" placeholder="Reason for manual outcome adjustment (e.g., customer called back, verified renewal)..." rows="3" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-sky-500"></textarea>
+          </div>
+
+          <!-- In-page confirmation box -->
+          <div id="modal-confirm-box" class="hidden p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+            <div class="font-semibold flex items-center gap-1.5">
+              <span>⚠️</span> <span>Confirm Outcome Override</span>
+            </div>
+            <p id="modal-confirm-text" class="text-xs text-amber-800"></p>
+            <div class="flex gap-2 pt-1">
+              <button id="btn-confirm-override" onclick="executeCallOverride()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition inline-flex items-center gap-1.5">
+                <span id="spinner-modal-override" class="hidden w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>Yes, Record Override</span>
+              </button>
+              <button onclick="cancelModalConfirm()" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-lg transition">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div id="modal-footer" class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2.5">
+        <button type="button" onclick="closeOverrideModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 transition">Close</button>
+        <button id="btn-modal-submit" onclick="promptModalConfirm()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-lg shadow-sm transition">Proceed to Override</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Toast -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-xs">
     <span id="toast-icon">ℹ️</span>
@@ -575,6 +682,17 @@
 
   <!-- JavaScript Application Logic -->
   <script>
+    // HTML Sanitization Utility to prevent Cross-Site Scripting (XSS)
+    function escapeHtml(val) {
+      if (val === null || val === undefined) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // State
     let currentView = 'dashboard';
     let selectedFiles = { leads: null, events: null };
@@ -584,6 +702,7 @@
     // Initialization
     document.addEventListener('DOMContentLoaded', () => {
       setupDropzones();
+      fetchDashboardStats();
       const hash = window.location.hash.replace('#', '');
       if (['dashboard', 'upload', 'leads', 'ledger', 'reports', 'quality'].includes(hash)) {
         navigate(hash);
@@ -637,6 +756,7 @@
       }
 
       // Lazy load view data
+      if (viewName === 'dashboard' || viewName === 'quality') fetchDashboardStats();
       if (viewName === 'leads') fetchLeadsTable();
       if (viewName === 'ledger') fetchLedgerTable();
       if (viewName === 'reports') fetchReportsStatus();
@@ -663,8 +783,13 @@
         if (data.status !== 'success') return;
 
         const s = data.summary;
-        document.getElementById('metric-total-leads').innerText = s.total_leads.toLocaleString();
-        document.getElementById('metric-sub-leads').innerText = `${s.accepted_leads.toLocaleString()} accepted / ${s.rejected_leads.toLocaleString()} rejected`;
+        const uniqueLeads = s.unique_leads !== undefined ? s.unique_leads : (s.accepted_leads || 0);
+        const inputRows = s.input_rows_processed !== undefined ? s.input_rows_processed : ((s.accepted_leads || 0) + (s.rejected_leads || 0));
+        const dupMerged = s.duplicate_lead_rows_merged || 0;
+        const rejectedRows = s.rejected_leads || 0;
+
+        document.getElementById('metric-total-leads').innerText = uniqueLeads.toLocaleString();
+        document.getElementById('metric-sub-leads').innerText = `${inputRows.toLocaleString()} rows in • ${rejectedRows.toLocaleString()} rejected • ${dupMerged.toLocaleString()} merged`;
         document.getElementById('metric-total-calls').innerText = s.total_calls.toLocaleString();
         document.getElementById('metric-connected-calls').innerText = s.connected_calls.toLocaleString();
         const ratePct = (parseFloat(s.connectivity_rate) * 100).toFixed(1);
@@ -692,11 +817,11 @@
         if (data.daily_activity && data.daily_activity.length > 0) {
           dailyTbody.innerHTML = data.daily_activity.map(d => `
             <tr class="hover:bg-slate-50/80 transition">
-              <td class="p-2 font-mono text-slate-800">${d.date}</td>
-              <td class="p-2 text-right">${d.total_calls}</td>
-              <td class="p-2 text-right">${d.connected_calls}</td>
-              <td class="p-2 text-right font-mono text-[11px]">${d.connectivity_rate}</td>
-              <td class="p-2 text-right font-semibold text-emerald-600">${d.success_leads}</td>
+              <td class="p-2 font-mono text-slate-800">${escapeHtml(d.date)}</td>
+              <td class="p-2 text-right">${Number(d.total_calls) || 0}</td>
+              <td class="p-2 text-right">${Number(d.connected_calls) || 0}</td>
+              <td class="p-2 text-right font-mono text-[11px]">${escapeHtml(d.connectivity_rate)}</td>
+              <td class="p-2 text-right font-semibold text-emerald-600">${Number(d.success_leads) || 0}</td>
             </tr>
           `).join('');
         }
@@ -707,12 +832,13 @@
         const totalRejs = Math.max(1, s.rejected_leads);
         if (Object.keys(rejs).length > 0) {
           qContainer.innerHTML = Object.entries(rejs).map(([reason, count]) => {
-            const pct = ((count / totalRejs) * 100).toFixed(1);
+            const countNum = Number(count) || 0;
+            const pct = Math.min(100, Math.max(0, ((countNum / totalRejs) * 100))).toFixed(1);
             return `
               <div>
                 <div class="flex justify-between mb-1">
-                  <span class="font-mono text-slate-700">${reason}</span>
-                  <span class="text-slate-500 font-semibold">${count} (${pct}%)</span>
+                  <span class="font-mono text-slate-700">${escapeHtml(reason)}</span>
+                  <span class="text-slate-500 font-semibold">${countNum} (${pct}%)</span>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-2">
                   <div class="bg-rose-500 h-2 rounded-full" style="width: ${pct}%"></div>
@@ -729,6 +855,13 @@
         document.getElementById('dq-unknown-disp').innerText = s.unknown_disposition_events.toLocaleString();
         document.getElementById('dq-active-orphans').innerText = s.active_orphan_events.toLocaleString();
         document.getElementById('dq-field-warnings').innerText = s.field_warnings.toLocaleString();
+
+        if (document.getElementById('dq-total-input-rows')) {
+          document.getElementById('dq-total-input-rows').innerText = inputRows.toLocaleString();
+          document.getElementById('dq-unique-leads').innerText = uniqueLeads.toLocaleString();
+          document.getElementById('dq-duplicate-merged').innerText = dupMerged.toLocaleString();
+          document.getElementById('dq-rejected-rows').innerText = rejectedRows.toLocaleString();
+        }
 
       } catch (err) {
         console.error('Failed to load dashboard stats:', err);
@@ -758,7 +891,7 @@
         document.getElementById('leads-next-btn').disabled = data.page >= data.total_pages;
 
         if (data.leads.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">No matching leads found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-slate-400">No matching leads found.</td></tr>';
           return;
         }
 
@@ -769,18 +902,23 @@
           else if (lead.bucket === 'in_progress_telephony_failed') bClass = 'bg-rose-50 text-rose-700 font-medium';
 
           const succIcon = lead.ever_success ? '<span class="text-emerald-600 font-bold">✓</span>' : '<span class="text-slate-300">—</span>';
+          const hasCalls = (Number(lead.total_calls) || 0) > 0;
+          const actionBtn = hasCalls
+            ? `<button onclick="openOverrideModal(${Number(lead.id)})" class="px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition shadow-2xs">Override</button>`
+            : `<button disabled title="No calls to override" class="px-2.5 py-1 text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200 rounded-lg cursor-not-allowed opacity-60">No Calls</button>`;
 
           return `
             <tr class="hover:bg-slate-50/70 transition">
-              <td class="p-3 font-mono text-sky-700 text-[11px]">${lead.workflow_id}</td>
-              <td class="p-3 font-mono font-medium text-slate-900">${lead.external_ref}</td>
-              <td class="p-3 font-mono text-slate-500">${lead.batch_id}</td>
-              <td class="p-3 font-mono text-slate-700">${lead.phone_masked}</td>
-              <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] ${bClass}">${lead.bucket}</span></td>
-              <td class="p-3 text-right font-medium">${lead.total_calls}</td>
-              <td class="p-3 text-right">${lead.connected_calls}</td>
-              <td class="p-3 font-mono text-slate-600">${lead.current_disposition || '—'}</td>
+              <td class="p-3 font-mono text-sky-700 text-[11px]">${escapeHtml(lead.workflow_id)}</td>
+              <td class="p-3 font-mono font-medium text-slate-900">${escapeHtml(lead.external_ref)}</td>
+              <td class="p-3 font-mono text-slate-500">${escapeHtml(lead.batch_id)}</td>
+              <td class="p-3 font-mono text-slate-700">${escapeHtml(lead.phone_masked)}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] ${bClass}">${escapeHtml(lead.bucket)}</span></td>
+              <td class="p-3 text-right font-medium">${Number(lead.total_calls) || 0}</td>
+              <td class="p-3 text-right">${Number(lead.connected_calls) || 0}</td>
+              <td class="p-3 font-mono text-slate-600">${escapeHtml(lead.current_disposition || '—')}</td>
               <td class="p-3 text-center">${succIcon}</td>
+              <td class="p-3 text-right">${actionBtn}</td>
             </tr>
           `;
         }).join('');
@@ -793,6 +931,156 @@
     function changeLeadsPage(delta) {
       leadsState.page = Math.max(1, leadsState.page + delta);
       fetchLeadsTable();
+    }
+
+    // Modal: Manual Disposition Override Logic
+    let currentOverrideLead = null;
+    let currentLeadCallsData = null;
+
+    async function openOverrideModal(leadId) {
+      currentOverrideLead = leadId;
+      const modal = document.getElementById('override-modal');
+      const errBox = document.getElementById('modal-error-alert');
+      const noCallsBox = document.getElementById('modal-no-calls-notice');
+      const formFields = document.getElementById('modal-form-fields');
+      const footer = document.getElementById('modal-footer');
+      const confirmBox = document.getElementById('modal-confirm-box');
+      const submitBtn = document.getElementById('btn-modal-submit');
+
+      errBox.classList.add('hidden');
+      confirmBox.classList.add('hidden');
+      submitBtn.classList.remove('hidden');
+      submitBtn.disabled = false;
+      document.getElementById('modal-reason-input').value = '';
+      document.getElementById('modal-reason-counter').innerText = '0 / 500';
+      document.getElementById('modal-lead-info').innerText = 'Loading lead details...';
+      modal.classList.remove('hidden');
+
+      try {
+        const res = await fetch(`/api/dashboard/leads/${leadId}/calls`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to fetch lead calls');
+        }
+
+        currentLeadCallsData = data;
+        const lead = data.lead;
+        document.getElementById('modal-lead-info').innerHTML = `Lead: <strong class="text-slate-800">${escapeHtml(lead.external_ref)}</strong> • ${escapeHtml(lead.workflow_id)} • ${escapeHtml(lead.phone_masked)}`;
+
+        if (!data.calls || data.calls.length === 0) {
+          noCallsBox.classList.remove('hidden');
+          formFields.classList.add('hidden');
+          submitBtn.classList.add('hidden');
+          return;
+        }
+
+        noCallsBox.classList.add('hidden');
+        formFields.classList.remove('hidden');
+        submitBtn.classList.remove('hidden');
+
+        // Populate call selector
+        const callSelect = document.getElementById('modal-call-select');
+        callSelect.innerHTML = data.calls.map(c => `
+          <option value="${escapeHtml(c.call_id)}">${escapeHtml(c.call_id)} — ${escapeHtml(c.occurred_at_ist)} (${escapeHtml(c.effective_disposition)})</option>
+        `).join('');
+
+        // Populate disposition selector
+        const dispSelect = document.getElementById('modal-disp-select');
+        dispSelect.innerHTML = data.allowed_dispositions.map(d => `
+          <option value="${escapeHtml(d.code)}">${escapeHtml(d.label)} [${escapeHtml(d.code)}]${d.is_success ? ' ★ Success' : ''}${d.is_terminal ? ' (Terminal)' : ''}</option>
+        `).join('');
+
+        onModalCallChange();
+
+      } catch (err) {
+        errBox.innerText = err.message || 'Error loading calls';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function onModalCallChange() {
+      if (!currentLeadCallsData) return;
+      const callId = document.getElementById('modal-call-select').value;
+      const c = currentLeadCallsData.calls.find(item => item.call_id === callId);
+      const detailsBox = document.getElementById('modal-call-details');
+      if (c) {
+        detailsBox.innerHTML = `
+          <div><strong>Call ID:</strong> ${escapeHtml(c.call_id)}</div>
+          <div><strong>Occurred:</strong> ${escapeHtml(c.occurred_at_ist)}</div>
+          <div><strong>Connected:</strong> ${c.is_connected ? '<span class="text-emerald-600 font-semibold">Yes</span>' : '<span class="text-slate-400">No</span>'} • <strong>Telephony Failed:</strong> ${c.is_telephony_failed ? '<span class="text-rose-600 font-semibold">Yes</span>' : '<span class="text-slate-400">No</span>'}</div>
+          <div><strong>Current Effective Disposition:</strong> <span class="font-mono font-semibold text-sky-700">${escapeHtml(c.effective_disposition)}</span></div>
+        `;
+      }
+    }
+
+    function closeOverrideModal() {
+      document.getElementById('override-modal').classList.add('hidden');
+      currentOverrideLead = null;
+      currentLeadCallsData = null;
+    }
+
+    function promptModalConfirm() {
+      const callId = document.getElementById('modal-call-select').value;
+      const dispSelect = document.getElementById('modal-disp-select');
+      const dispCode = dispSelect.value;
+      const dispLabel = dispSelect.options[dispSelect.selectedIndex].text;
+
+      const confirmBox = document.getElementById('modal-confirm-box');
+      const confirmText = document.getElementById('modal-confirm-text');
+      const submitBtn = document.getElementById('btn-modal-submit');
+
+      confirmText.innerHTML = `Are you sure you want to override Call <strong class="font-mono text-amber-950">${escapeHtml(callId)}</strong> to <strong class="font-mono text-amber-950">${escapeHtml(dispLabel)}</strong>? This will create an immutable append-only override event in the ledger.`;
+      confirmBox.classList.remove('hidden');
+      submitBtn.classList.add('hidden');
+    }
+
+    function cancelModalConfirm() {
+      document.getElementById('modal-confirm-box').classList.add('hidden');
+      document.getElementById('btn-modal-submit').classList.remove('hidden');
+    }
+
+    async function executeCallOverride() {
+      const callId = document.getElementById('modal-call-select').value;
+      const dispCode = document.getElementById('modal-disp-select').value;
+      const reason = document.getElementById('modal-reason-input').value.trim();
+      const errBox = document.getElementById('modal-error-alert');
+      const confirmBtn = document.getElementById('btn-confirm-override');
+      const spinner = document.getElementById('spinner-modal-override');
+
+      errBox.classList.add('hidden');
+      confirmBtn.disabled = true;
+      spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/dashboard/calls/override', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lead_id: currentOverrideLead,
+            call_id: callId,
+            disposition_code: dispCode,
+            reason: reason
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || data.message || `Override failed (${res.status})`);
+        }
+
+        closeOverrideModal();
+        showToast(data.message || 'Disposition outcome overridden successfully!', '✅');
+        fetchLeadsTable();
+        fetchDashboardStats();
+
+      } catch (err) {
+        errBox.innerText = err.message || 'An error occurred during override';
+        errBox.classList.remove('hidden');
+      } finally {
+        confirmBtn.disabled = false;
+        spinner.classList.add('hidden');
+      }
     }
 
     // API: Fetch Ledger Events
@@ -831,13 +1119,13 @@
 
           return `
             <tr class="hover:bg-slate-50/70 transition">
-              <td class="p-3 font-mono text-slate-900">${ev.event_id}</td>
-              <td class="p-3 font-mono text-slate-500 text-[11px]">${ev.workflow_id}</td>
-              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${tColor}">${ev.event_type}</span></td>
-              <td class="p-3 font-mono text-slate-600">${ev.call_id}</td>
-              <td class="p-3 font-mono text-slate-600 text-[11px]">${ev.occurred_at_ist}</td>
-              <td class="p-3 font-mono text-slate-700">${ev.phone_masked}</td>
-              <td class="p-3 font-mono text-slate-700">${ev.disposition_code}</td>
+              <td class="p-3 font-mono text-slate-900">${escapeHtml(ev.event_id)}</td>
+              <td class="p-3 font-mono text-slate-500 text-[11px]">${escapeHtml(ev.workflow_id)}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${tColor}">${escapeHtml(ev.event_type)}</span></td>
+              <td class="p-3 font-mono text-slate-600">${escapeHtml(ev.call_id)}</td>
+              <td class="p-3 font-mono text-slate-600 text-[11px]">${escapeHtml(ev.occurred_at_ist)}</td>
+              <td class="p-3 font-mono text-slate-700">${escapeHtml(ev.phone_masked)}</td>
+              <td class="p-3 font-mono text-slate-700">${escapeHtml(ev.disposition_code || '—')}</td>
               <td class="p-3 text-center">${orphanBadge}</td>
             </tr>
           `;
@@ -863,9 +1151,9 @@
           const el = document.getElementById(`info-${key}`);
           if (el) {
             if (r.exists) {
-              const kb = (r.size_bytes / 1024).toFixed(1);
+              const kb = (Number(r.size_bytes || 0) / 1024).toFixed(1);
               const timeStr = r.modified_at ? new Date(r.modified_at).toLocaleTimeString() : '';
-              el.innerHTML = `<span class="font-medium text-slate-700">${r.row_count} records</span> • ${kb} KB${timeStr ? ` • <span class="text-slate-400">Updated ${timeStr}</span>` : ''}`;
+              el.innerHTML = `<span class="font-medium text-slate-700">${Number(r.row_count) || 0} records</span> • ${kb} KB${timeStr ? ` • <span class="text-slate-400">Updated ${escapeHtml(timeStr)}</span>` : ''}`;
             } else {
               el.innerText = 'Not yet generated';
             }
@@ -964,7 +1252,19 @@
           throw new Error(errMsg);
         }
 
-        showToast('Data uploaded and processed successfully! Reports regenerated.', '✅');
+        const outcome = data.outcome || (data.status === 'success' ? 'success' : 'error');
+        const msg = data.message || 'Data uploaded and processed.';
+
+        if (outcome === 'rejected') {
+          showToast(msg, '❌');
+        } else if (outcome === 'partial_success' || outcome === 'bundle_warning' || outcome === 'report_warning') {
+          showToast(msg, '⚠️');
+        } else if (outcome === 'duplicate_only') {
+          showToast(msg, '🔄');
+        } else {
+          showToast(msg, '✅');
+        }
+
         displayUploadResults(data, endpoint);
         refreshAllData();
 
@@ -983,6 +1283,34 @@
       card.classList.remove('hidden');
       document.getElementById('result-timestamp').innerText = new Date().toLocaleTimeString();
 
+      const outcome = data.outcome || (data.status === 'success' ? 'success' : 'error');
+      const badge = document.getElementById('result-icon-badge');
+      const title = document.getElementById('result-card-title');
+
+      if (badge && title) {
+        if (outcome === 'rejected') {
+          badge.className = 'w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xs';
+          badge.innerText = '✕';
+          title.innerText = 'Ingestion Rejected: All Rows Failed Validation';
+        } else if (outcome === 'partial_success' || outcome === 'bundle_warning') {
+          badge.className = 'w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs';
+          badge.innerText = '⚠️';
+          title.innerText = 'Ingestion Completed with Warnings';
+        } else if (outcome === 'report_warning') {
+          badge.className = 'w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs';
+          badge.innerText = '⚠️';
+          title.innerText = 'Data Committed: Report Update Warning';
+        } else if (outcome === 'duplicate_only') {
+          badge.className = 'w-6 h-6 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs';
+          badge.innerText = '🔄';
+          title.innerText = 'Duplicate Upload: Records Merged';
+        } else {
+          badge.className = 'w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs';
+          badge.innerText = '✓';
+          title.innerText = 'Ingestion Results Summary';
+        }
+      }
+
       const container = document.getElementById('result-metrics-container');
       const rejsContainer = document.getElementById('result-rejections-container');
       const rejsList = document.getElementById('result-rejections-list');
@@ -998,23 +1326,27 @@
         html += `
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Lead Rows Total</div>
-            <div class="text-base font-bold text-slate-900 mt-0.5">${leadMetrics.lead_rows_total}</div>
+            <div class="text-base font-bold text-slate-900 mt-0.5">${Number(leadMetrics.lead_rows_total) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Accepted Leads</div>
-            <div class="text-base font-bold text-emerald-600 mt-0.5">${leadMetrics.lead_rows_accepted}</div>
+            <div class="text-base font-bold text-emerald-600 mt-0.5">${Number(leadMetrics.lead_rows_accepted) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <div class="text-slate-500">Rejected Leads</div>
-            <div class="text-base font-bold text-rose-600 mt-0.5">${leadMetrics.lead_rows_rejected}</div>
+            <div class="text-slate-500">Unique Leads Created</div>
+            <div class="text-base font-bold text-sky-600 mt-0.5">${Number(leadMetrics.unique_leads_created) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Duplicates Merged</div>
-            <div class="text-base font-bold text-amber-600 mt-0.5">${leadMetrics.duplicate_lead_rows_merged || 0}</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${Number(leadMetrics.duplicate_lead_rows_merged) || 0}</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500">Rejected Leads</div>
+            <div class="text-base font-bold text-rose-600 mt-0.5">${Number(leadMetrics.lead_rows_rejected) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Field Warnings</div>
-            <div class="text-base font-bold text-amber-600 mt-0.5">${leadMetrics.field_warnings || 0}</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${Number(leadMetrics.field_warnings) || 0}</div>
           </div>
         `;
       }
@@ -1023,27 +1355,27 @@
         html += `
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Events Total</div>
-            <div class="text-base font-bold text-slate-900 mt-0.5">${eventMetrics.events_total}</div>
+            <div class="text-base font-bold text-slate-900 mt-0.5">${Number(eventMetrics.events_total) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Processed Events</div>
-            <div class="text-base font-bold text-sky-600 mt-0.5">${eventMetrics.events_processed}</div>
+            <div class="text-base font-bold text-sky-600 mt-0.5">${Number(eventMetrics.events_processed) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Malformed Lines</div>
-            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.malformed_events || 0}</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${Number(eventMetrics.malformed_events) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Duplicate Events Dropped</div>
-            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.duplicate_events_dropped || 0}</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${Number(eventMetrics.duplicate_events_dropped) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Unknown Dispositions</div>
-            <div class="text-base font-bold text-amber-600 mt-0.5">${eventMetrics.unknown_disposition_events || 0}</div>
+            <div class="text-base font-bold text-amber-600 mt-0.5">${Number(eventMetrics.unknown_disposition_events) || 0}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <div class="text-slate-500">Active Orphans</div>
-            <div class="text-base font-bold text-purple-600 mt-0.5">${eventMetrics.active_orphan_events || 0}</div>
+            <div class="text-base font-bold text-purple-600 mt-0.5">${Number(eventMetrics.active_orphan_events) || 0}</div>
           </div>
         `;
       }
@@ -1056,8 +1388,8 @@
         rejsContainer.classList.remove('hidden');
         rejsList.innerHTML = rejs.map(r => `
           <div class="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-            <span class="text-slate-500">Row #${r.row_number}</span>
-            <span class="text-rose-600 font-semibold">${r.reason}</span>
+            <span class="text-slate-500">Row #${Number(r.row_number) || 0}</span>
+            <span class="text-rose-600 font-semibold">${escapeHtml(r.reason)}</span>
           </div>
         `).join('');
       }

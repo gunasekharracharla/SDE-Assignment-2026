@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from solution.config import get_db_path
+from solution.config import CryptoConfigError, get_db_path, validate_crypto_config
 from solution.db import get_db_connection, init_db
 from solution.events import ingest_events_from_drop
 from solution.leads import ingest_leads_from_drop
@@ -86,6 +86,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory to write report files into",
     )
     report_parser.set_defaults(func=handle_report)
+
+    try:
+        validate_crypto_config()
+    except CryptoConfigError as e:
+        print(f"Configuration Error: {e}", file=sys.stderr)
+        return 1
 
     parsed = parser.parse_args(argv)
     return parsed.func(parsed)

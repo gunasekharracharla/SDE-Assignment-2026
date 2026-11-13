@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from solution.config import get_db_path
+from solution.config import get_db_path, validate_crypto_config
 from solution.db import get_db_connection, init_db
 from solution.web.config import (
     ALLOWED_WORKFLOWS,
@@ -28,6 +28,9 @@ def create_app(
     uploads_dir: Path | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI web application."""
+    # Enforce cryptographic key validation on startup (fails fast in production/staging)
+    validate_crypto_config()
+
     app = FastAPI(
         title="Interaction Ledger & Reporting Web Application",
         description="Local web-based data upload, ingestion, and reporting platform for Agentic Universe.",

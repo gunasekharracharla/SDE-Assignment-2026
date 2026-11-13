@@ -11,24 +11,20 @@ import re
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from solution.config import PII_HASH_SALT, PII_SECRET_KEY
+from solution.config import get_pii_hash_salt, get_pii_secret_key
 
 
 def _get_aes_key() -> bytes:
-    """Decode or derive a 32-byte key for AES-256-GCM."""
-    try:
-        key_bytes = bytes.fromhex(PII_SECRET_KEY)
-        if len(key_bytes) == 32:
-            return key_bytes
-    except ValueError:
-        pass
-    # Fallback derivation using SHA-256 if a passphrase was provided
-    return hashlib.sha256(PII_SECRET_KEY.encode("utf-8")).digest()
+    """Retrieve validated 32-byte key for AES-256-GCM.
+
+    Strictly enforces 32-byte key format. No silent fallback to SHA-256 hashing.
+    """
+    return get_pii_secret_key()
 
 
 def encrypt_pii(plaintext: str | None) -> str | None:
     """Encrypt PII using AES-256-GCM authenticated encryption.
-    
+
     Returns base64-encoded string containing 12-byte nonce + ciphertext + 16-byte tag.
     Returns None if plaintext is None.
     """
@@ -65,16 +61,17 @@ def decrypt_pii(armored_text: str | None) -> str | None:
         raise ValueError(f"PII decryption failed or authentication tag mismatch: {e}") from e
 
 
-def hash_phone(canonical_phone: str | None, salt: str = PII_HASH_SALT) -> str | None:
+def hash_phone(canonical_phone: str | None, salt: str | None = None) -> str | None:
     """Compute HMAC-SHA256 blind index for exact-match phone lookups.
     
     Provides deterministic matching across leads and events without exposing plaintext.
     """
     if canonical_phone is None:
         return None
+    active_salt = salt if salt is not None else get_pii_hash_salt()
     clean = canonical_phone.strip()
     return hmac.new(
-        salt.encode("utf-8"),
+        active_salt.encode("utf-8"),
         clean.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()

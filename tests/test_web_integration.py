@@ -300,3 +300,78 @@ def test_zero_pii_across_all_web_responses(integrated_env):
     assert r3.status_code == 200
     assert raw_name not in r3.text
     assert raw_phone not in r3.text
+
+
+def test_end_to_end_manual_override_lifecycle(integrated_env):
+    """Scenario 7: Full lifecycle test of manual disposition override.
+
+    1. Ingest bundle with 1 lead and 1 call having 'callback_requested'.
+    2. Confirm lead is in_progress_dialed with 0 success.
+    3. Manually override the call to 'renewed' with audit justification.
+    4. Confirm lead moves to 'completed' and ever_success=true.
+    5. Confirm daily_overview, lead_report, and data_quality reflect the new state.
+    """
+    client, db_path, reports_dir, _ = integrated_env
+
+    csv_data = (
+        "Customer Name,Phone Number,Policy Number,Policy Expiry,Premium Amount,Vehicle Model,Preferred Language\n"
+        "Tarun Khanna,9876543999,POL-E2E-99,2026-12-31,20000,Honda City,en\n"
+    ).encode("utf-8")
+
+    ev_data = (
+        '{"event_id": "e_e2e_1", "workflow_id": "motor_renewal", "event_type": "call.initiated", "call_id": "call_e2e_1", "occurred_at": "2026-11-10T10:00:00Z", "phone": "9876543999"}\n'
+        '{"event_id": "e_e2e_2", "workflow_id": "motor_renewal", "event_type": "call.connected", "call_id": "call_e2e_1", "occurred_at": "2026-11-10T10:01:00Z", "phone": "9876543999"}\n'
+        '{"event_id": "e_e2e_3", "workflow_id": "motor_renewal", "event_type": "disposition.set", "call_id": "call_e2e_1", "occurred_at": "2026-11-10T10:05:00Z", "payload": {"disposition_code": "callback_requested"}}\n'
+    ).encode("utf-8")
+
+    r_bundle = client.post("/api/upload/bundle", data={"workflow_id": "motor_renewal"}, files={
+        "leads_file": ("leads.csv", io.BytesIO(csv_data), "text/csv"),
+        "events_file": ("events.jsonl", io.BytesIO(ev_data), "application/jsonl"),
+    })
+    assert r_bundle.status_code == 200
+
+    # Get lead ID
+    leads_res = client.get("/api/dashboard/leads")
+    lead_id = leads_res.json()["leads"][0]["id"]
+
+    # Pre-override verification
+    calls_res = client.get(f"/api/dashboard/leads/{lead_id}/calls")
+    assert calls_res.json()["calls"][0]["effective_disposition"] == "callback_requested"
+    assert calls_res.json()["calls"][0]["is_terminal"] is False
+
+    # Execute manual override
+    r_ovr = client.post(
+        "/api/dashboard/calls/override",
+        json={
+            "lead_id": lead_id,
+            "call_id": "call_e2e_1",
+            "disposition_code": "renewed",
+            "reason": "Supervisor reviewed callback audio and verified renewal payment",
+        },
+    )
+    assert r_ovr.status_code == 200
+    ovr_json = r_ovr.json()
+    assert ovr_json["effective_disposition"] == "renewed"
+    assert ovr_json["is_terminal"] is True
+    assert ovr_json["is_success"] is True
+    assert ovr_json["reports_updated"] is True
+
+    # Post-override calls check
+    calls_after = client.get(f"/api/dashboard/leads/{lead_id}/calls").json()
+    assert calls_after["calls"][0]["effective_disposition"] == "renewed"
+    assert calls_after["calls"][0]["is_terminal"] is True
+    assert calls_after["calls"][0]["is_success"] is True
+
+    # Post-override lead report check
+    lead_rep = list(csv.DictReader((reports_dir / "lead_report.csv").read_text(encoding="utf-8").splitlines()))
+    assert lead_rep[0]["bucket"] == "completed"
+    assert lead_rep[0]["current_disposition"] == "renewed"
+    assert lead_rep[0]["ever_success"] == "true"
+
+    # Post-override daily overview check
+    daily_rep = list(csv.DictReader((reports_dir / "daily_overview.csv").read_text(encoding="utf-8").splitlines()))
+    assert daily_rep[0]["success_leads"] == "1"
+
+    # Post-override data quality check
+    dq = json.loads((reports_dir / "data_quality.json").read_text(encoding="utf-8"))
+    assert dq["orphan_events"] == 0

@@ -146,6 +146,8 @@ def test_xss_payload_safety(qa_env):
     xss_csv = (
         "Customer Name,Phone Number,Policy Number,Policy Expiry,Premium Amount,Vehicle Model,Preferred Language\n"
         "<script>alert('xss')</script>,9876540001,<img src=x onerror=alert(1)>,2026-12-31,10000,Car,en\n"
+        "Malicious User 2,9876540002,<script>alert(1)</script>,2026-12-31,10000,Car,en\n"
+        'Malicious User 3,9876540003,"""><svg onload=alert(1)>",2026-12-31,10000,Car,en\n'
     ).encode("utf-8")
 
     resp = client.post(
@@ -159,10 +161,73 @@ def test_xss_payload_safety(qa_env):
     leads_text = leads_resp.text
     # Customer name must NOT be returned in plaintext at all
     assert "<script>alert('xss')</script>" not in leads_text
-    # Policy number as external_ref is returned in JSON string (safely serialized)
     data = leads_resp.json()
-    assert len(data["leads"]) == 1
-    assert data["leads"][0]["external_ref"] == "<img src=x onerror=alert(1)>"
+    assert len(data["leads"]) == 3
+    refs = {l["external_ref"] for l in data["leads"]}
+    assert "<img src=x onerror=alert(1)>" in refs
+    assert "<script>alert(1)</script>" in refs
+    assert "\"><svg onload=alert(1)>" in refs
+
+
+def test_frontend_dom_xss_prevention_and_html_escaping(qa_env):
+    """Verify frontend index.html defines escapeHtml and sanitizes all three attack payloads."""
+    index_path = Path("solution/web/static/index.html")
+    assert index_path.exists(), "index.html missing"
+    html_content = index_path.read_text(encoding="utf-8")
+
+    # 1. Assert escapeHtml is defined and properly replaces all sensitive characters
+    assert "function escapeHtml(val)" in html_content
+    assert ".replace(/&/g, '&amp;')" in html_content
+    assert ".replace(/</g, '&lt;')" in html_content
+    assert ".replace(/>/g, '&gt;')" in html_content
+    assert '.replace(/"/g, \'&quot;\')' in html_content
+    assert ".replace(/'/g, '&#39;')" in html_content
+
+    # 2. Assert escapeHtml is invoked on user-controlled fields in tables
+    assert "${escapeHtml(lead.external_ref)}" in html_content
+    assert "${escapeHtml(lead.workflow_id)}" in html_content
+    assert "${escapeHtml(lead.phone_masked)}" in html_content
+    assert "${escapeHtml(ev.call_id)}" in html_content
+    assert "${escapeHtml(ev.event_id)}" in html_content
+    assert "${escapeHtml(r.reason)}" in html_content
+
+    # 3. Simulate escapeHtml logic on the three specific attack payloads
+    def python_escape_html(val: str) -> str:
+        if val is None:
+            return ""
+        return (
+            str(val)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
+
+    payloads = [
+        "<img src=x onerror=alert(1)>",
+        "<script>alert(1)</script>",
+        '"><svg onload=alert(1)>',
+    ]
+
+    for p in payloads:
+        escaped = python_escape_html(p)
+        # Ensure executable tags and unescaped quotes cannot survive
+        assert "<" not in escaped
+        assert ">" not in escaped
+        assert '"' not in escaped
+        assert "'" not in escaped
+        assert "&lt;" in escaped
+        assert "&gt;" in escaped
+
+    # 4. Verify legitimate strings remain readable
+    legit_strings = [
+        ("POL-1001", "POL-1001"),
+        ("Tata & Sons Policy", "Tata &amp; Sons Policy"),
+        ("+91 ****** 1234", "+91 ****** 1234"),
+    ]
+    for raw, expected in legit_strings:
+        assert python_escape_html(raw) == expected
 
 
 def test_zero_pii_exposure_in_all_endpoints(qa_env):
